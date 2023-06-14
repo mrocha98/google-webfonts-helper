@@ -1,5 +1,5 @@
-import * as Bluebird from "bluebird";
-import * as should from "should";
+import Bluebird from "bluebird";
+import should from "should";
 import { asyncRetry } from "./asyncRetry";
 
 describe("utils/asyncRetry", function () {

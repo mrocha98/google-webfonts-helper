@@ -1,4 +1,4 @@
-import * as express from "express";
+import express from "express";
 import { getApiFonts, getApiFontsById } from "./api/fonts.controller";
 import { getHealthy } from "./api/healthy.controller";
 

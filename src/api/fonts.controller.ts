@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import * as fs from "fs";
-import * as JSZip from "jszip";
-import * as _ from "lodash";
-import * as path from "path";
+import fs from "node:fs";
+import JSZip from "jszip";
+import _ from "lodash";
+import path from "node:path";
 import { IUserAgents } from "../config";
 import { loadFontBundle, loadFontItems, loadFontSubsetArchive, loadSubsetMap, loadVariantItems } from "../logic/core";
 import { IFontSubsetArchive } from "../logic/fetchFontSubsetArchive";

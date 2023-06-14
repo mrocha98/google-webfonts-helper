@@ -1,8 +1,8 @@
-import * as Bluebird from "bluebird";
-import * as fs from "fs";
-import * as JSZip from "jszip";
-import * as _ from "lodash";
-import * as path from "path";
+import Bluebird from "bluebird";
+import fs from "node:fs";
+import JSZip from "jszip";
+import _ from "lodash";
+import path from "node:path";
 import { finished } from "stream/promises";
 import { config } from "../config";
 import { asyncRetry } from "../utils/asyncRetry";
@@ -73,9 +73,13 @@ export async function fetchFontSubsetArchive(
   console.info(`fetchFontSubsetArchive create archive... file=${subsetFontArchive.zipPath}`);
 
   try {
-    await finished(archive.generateNodeStream({
-      compression: "DEFLATE",
-    }).pipe(target));
+    await finished(
+      archive
+        .generateNodeStream({
+          compression: "DEFLATE",
+        })
+        .pipe(target)
+    );
 
     console.info(`fetchFontSubsetArchive create archive done! file=${subsetFontArchive.zipPath}`);
   } catch (e) {
@@ -83,14 +87,24 @@ export async function fetchFontSubsetArchive(
     // ensure all fs streams into the archive and the actual zip file are destroyed
     _.each(streams, (stream, index) => {
       try {
-        console.warn(`fetchFontSubsetArchive archive.generateNodeStream destroy stream ${index}/${streams.length}...`)
+        console.warn(`fetchFontSubsetArchive archive.generateNodeStream destroy stream ${index}/${streams.length}...`);
         stream.destroy();
       } catch (err) {
-        console.error("fetchFontSubsetArchive archive.generateNodeStream pipe failed, stream.destroy failed (catched)", fontID, subsets, err);
+        console.error(
+          "fetchFontSubsetArchive archive.generateNodeStream pipe failed, stream.destroy failed (catched)",
+          fontID,
+          subsets,
+          err
+        );
       }
     });
 
-    console.error("fetchFontSubsetArchive archive.generateNodeStream pipe failed, streams destroyed. Rethrowing err...", fontID, subsets, e);
+    console.error(
+      "fetchFontSubsetArchive archive.generateNodeStream pipe failed, streams destroyed. Rethrowing err...",
+      fontID,
+      subsets,
+      e
+    );
     throw e;
   }
 
@@ -100,15 +114,13 @@ export async function fetchFontSubsetArchive(
 async function fetchFontSubsetArchiveStream(url: string): Promise<Readable> {
   return asyncRetry<Readable>(
     async () => {
-
       const res = await axios.get<Readable>(url, {
         timeout: REQUEST_TIMEOUT_MS,
         responseType: "stream",
-        maxRedirects: 0 // https://github.com/axios/axios/issues/2610
+        maxRedirects: 0, // https://github.com/axios/axios/issues/2610
       });
 
       return res.data;
-
     },
     { retries: RETRIES }
   );

@@ -1,5 +1,5 @@
-import * as _ from "lodash";
-import * as path from "node:path";
+import _ from "lodash";
+import path from "node:path";
 
 const env = process.env.NODE_ENV || "development";
 

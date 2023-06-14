@@ -1,11 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/swcrc",
   "module": {
-    "type": "commonjs",
-    "noInterop": true
+    "type": "commonjs"
   },
   "jsc": {
-    "target": "es2020",
+    "target": "es2022",
     "parser": {
       "syntax": "typescript",
       "decorators": true,
@@ -14,6 +13,5 @@
     "externalHelpers": true
   },
   "minify": false,
-  "sourceMaps": true,
-  "exclude": [".*\\.spec.ts$"]
+  "sourceMaps": true
 }

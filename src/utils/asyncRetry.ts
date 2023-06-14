@@ -1,5 +1,5 @@
-import * as Bluebird from "bluebird";
-import * as _ from "lodash";
+import Bluebird from "bluebird";
+import _ from "lodash";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function asyncRetry<T>(fn: () => Promise<T>, options: { retries: number }, errors: any[] = []): Promise<T> {

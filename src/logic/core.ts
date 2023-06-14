@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import { synchronizedBy } from "../utils/synchronized";
 import { fetchFontSubsetArchive, IFontSubsetArchive } from "./fetchFontSubsetArchive";
 import { fetchFontURLs, IVariantItem } from "./fetchFontURLs";

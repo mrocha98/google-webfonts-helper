@@ -1,24 +1,16 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import "./load-env";
-import * as express from "express";
-import * as http from "http";
-import * as JSZip from "jszip";
+import express, { Express } from "express";
+import JSZip from "jszip";
 import { config } from "./config";
 import { initStore } from "./logic/store";
 import { setupRoutes } from "./routes";
 
-// use native promises
-JSZip.external.Promise = Promise;
+export async function initApp(): Promise<Express> {
+  // use native promises
+  JSZip.external.Promise = Promise;
 
-export const app = express();
-
-export function ready() {
-  return init;
-}
-
-const init = (async () => {
-  const server = http.createServer(app);
-  server.timeout = config.TIMEOUT_MS;
+  const app = express();
 
   const env = app.get("env");
 
@@ -42,25 +34,5 @@ const init = (async () => {
 
   await initStore();
 
-  // Start server
-  server.listen(config.PORT, config.IP, function () {
-    console.log(
-      "Express server listening on %d, in %s mode (timeout=%dms, compress=%s, accesslog=%s)",
-      config.PORT,
-      app.get("env"),
-      server.timeout,
-      config.ENABLE_MIDDLEWARE_COMPRESSION,
-      config.ENABLE_MIDDLEWARE_ACCESS_LOG
-    );
-  });
-
-  process.once("SIGINT", function () {
-    console.log("SIGINT received, closing server...");
-    server.close();
-  });
-
-  process.once("SIGTERM", function () {
-    console.log("SIGTERM received, closing server...");
-    server.close();
-  });
-})();
+  return app;
+}

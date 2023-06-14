@@ -31,4 +31,4 @@ COPY --chown=node:node --from=build-step /usr/app/dist /usr/app/dist
 ENV NODE_ENV=production
 
 EXPOSE 8080
-CMD ["dumb-init", "node", "/usr/app/dist/app.js"]
+CMD ["dumb-init", "node", "/usr/app/dist/server.js"]

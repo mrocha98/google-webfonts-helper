@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import { config } from "../config";
 
 // cached promise by key for in-flight request handling

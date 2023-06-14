@@ -1,9 +1,9 @@
 import { fromBuffer as fileTypeFromBuffer } from "file-type";
-import * as JSZip from "jszip";
-import * as _ from "lodash";
-import * as should from "should";
-import * as request from "supertest";
-import { app } from "../app";
+import JSZip from "jszip";
+import _ from "lodash";
+import should from "should";
+import request from "supertest";
+import { initApp } from "../app";
 import { getStats, reinitStore } from "../logic/store";
 
 describe("GET /api/fonts", () => {
@@ -12,6 +12,7 @@ describe("GET /api/fonts", () => {
   });
 
   it("should respond with JSON array with all fonts", async () => {
+    const app = await initApp();
     const res = await request(app).get("/api/fonts").timeout(10000).expect(200).expect("Content-Type", /json/);
     should(res.body).be.instanceof(Array);
   });
@@ -23,6 +24,7 @@ describe("GET /api/fonts/:id", () => {
   });
 
   it("should respond with font files for arvo", async function () {
+    const app = await initApp();
     const res = await request(app).get("/api/fonts/arvo").timeout(10000).expect(200).expect("Content-Type", /json/);
     should(res.body).be.instanceof(Object);
 
@@ -79,9 +81,10 @@ describe("GET /api/fonts/:id", () => {
 
     should(getStats().urlMap).eql(1);
     should(getStats().archiveMap).eql(0);
-  }).timeout(10000);
+  });
 
   it("should respond with font files for istok-web multi charsets filtered", async () => {
+    const app = await initApp();
     const res = await request(app)
       .get("/api/fonts/istok-web?subsets=cyrillic,cyrillic-ext,latin")
       .timeout(10000)
@@ -147,18 +150,19 @@ describe("GET /api/fonts/:id", () => {
 
     should(getStats().urlMap).eql(1);
     should(getStats().archiveMap).eql(0);
-  }).timeout(10000);
+  });
 
   it("should respond with 200 for known font istok-web empty subsets", async function () {
-    this.timeout(10000);
+    const app = await initApp();
     const res = await request(app).get("/api/fonts/istok-web?subsets=").timeout(10000).expect(200).expect("Content-Type", /json/);
     should(res.body).be.instanceof(Object);
 
     should(getStats().urlMap).eql(1);
     should(getStats().archiveMap).eql(0);
-  }).timeout(10000);
+  });
 
   it("should respond with 404 for unknown font", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/unknown-font")
       .timeout(10000)
@@ -167,9 +171,10 @@ describe("GET /api/fonts/:id", () => {
 
     should(getStats().urlMap).eql(0);
     should(getStats().archiveMap).eql(0);
-  }).timeout(10000);
+  });
 
   it("should respond with 404 for unknown font and subset", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/unknown-font?subsets=latin")
       .timeout(10000)
@@ -178,15 +183,16 @@ describe("GET /api/fonts/:id", () => {
 
     should(getStats().urlMap).eql(0);
     should(getStats().archiveMap).eql(0);
-  }).timeout(10000);
+  });
 
   it("should respond with 404 for known font istok-web and unknown subset", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/istok-web?subsets=unknownsubset")
       .timeout(10000)
       .expect(404)
       .expect("Content-Type", /text\/html/);
-  }).timeout(10000);
+  });
 });
 
 describe("GET /api/fonts/:id?download=zip", () => {
@@ -195,7 +201,7 @@ describe("GET /api/fonts/:id?download=zip", () => {
   });
 
   it("should (concurrently) download istok-web", async function () {
-    this.timeout(10000);
+    const app = await initApp();
     let triggered = 0;
 
     await Promise.all([
@@ -220,11 +226,10 @@ describe("GET /api/fonts/:id?download=zip", () => {
 
     should(getStats().urlMap).eql(1);
     should(getStats().archiveMap).eql(1);
-  }).timeout(10000);
+  });
 
   it("should (concurrently) download istok-web (subsets and formats mix)", async function () {
-    this.timeout(10000);
-
+    const app = await initApp();
     let triggered = 0;
 
     const [res1, res2] = await Promise.all([
@@ -263,12 +268,11 @@ describe("GET /api/fonts/:id?download=zip", () => {
 
     // 60 files in archive2
     should(_.keys(archive2.files).length).eql(20);
-  }).timeout(10000);
+  });
 
   it("should (concurrently) download playfair-display (different but unknown subsets resolve to the same key)", async function () {
+    const app = await initApp();
     let triggered = 0;
-
-    this.timeout(30000);
 
     const [res1, res2] = await Promise.all([
       request(app)
@@ -308,10 +312,10 @@ describe("GET /api/fonts/:id?download=zip", () => {
 
     // 60 files in archive2
     should(_.keys(archive2.files).length).eql(60);
-  }).timeout(10000);
+  });
 
   it("should respond with 200 for download attempt of known font istok-web with unspecified subset", async function () {
-    this.timeout(10000);
+    const app = await initApp();
     const res = await request(app)
       .get("/api/fonts/istok-web?download=zip&formats=woff,woff2")
       .responseType("blob")
@@ -348,9 +352,10 @@ describe("GET /api/fonts/:id?download=zip", () => {
     should((await fileTypeFromBuffer(await files[6].async("nodebuffer")))?.mime).eql("font/woff");
     should(files[7].name).eql("istok-web-v20-latin-regular.woff2");
     should((await fileTypeFromBuffer(await files[7].async("nodebuffer")))?.mime).eql("font/woff2");
-  }).timeout(10000);
+  });
 
   it("should respond with 200 for download attempt of known font istok-web with unspecified formats", async () => {
+    const app = await initApp();
     const res = await request(app)
       .get("/api/fonts/istok-web?download=zip&subsets=latin")
       .responseType("blob")
@@ -413,9 +418,10 @@ describe("GET /api/fonts/:id?download=zip", () => {
     should((await fileTypeFromBuffer(await files[18].async("nodebuffer")))?.mime).eql("font/woff");
     should(files[19].name).eql("istok-web-v20-latin-regular.woff2");
     should((await fileTypeFromBuffer(await files[19].async("nodebuffer")))?.mime).eql("font/woff2");
-  }).timeout(10000);
+  });
 
   it("should respond with 200 for download attempt of known font istok-web and empty subsets", async () => {
+    const app = await initApp();
     const res = await request(app)
       .get("/api/fonts/istok-web?download=zip&subsets=")
       .responseType("blob")
@@ -434,9 +440,10 @@ describe("GET /api/fonts/:id?download=zip", () => {
     _.each(_.sortBy(_.keys(archive.files)), (key) => {
       should(key.indexOf("istok-web-v20-latin-")).eql(0);
     });
-  }).timeout(10000);
+  });
 
   it("should respond with 200 for download attempt of known font istok-web and a single unknown format sneaked in", async () => {
+    const app = await initApp();
     const res = await request(app)
       .get("/api/fonts/istok-web?download=zip&formats=woff,woff2,rolf")
       .responseType("blob")
@@ -455,9 +462,10 @@ describe("GET /api/fonts/:id?download=zip", () => {
     _.each(_.sortBy(_.keys(archive.files)), (key) => {
       should(key.indexOf("istok-web-v20-latin-")).eql(0);
     });
-  }).timeout(10000);
+  });
 
   it("should respond with 200 for download attempt of known font istok-web with variants", async () => {
+    const app = await initApp();
     const res = await request(app)
       .get("/api/fonts/istok-web?download=zip&formats=woff,woff2&variants=regular")
       .responseType("blob")
@@ -477,9 +485,10 @@ describe("GET /api/fonts/:id?download=zip", () => {
       should(_.endsWith(key, ".woff") || _.endsWith(key, ".woff2")).eql(true);
       should(key.indexOf("regular") === -1).eql(false);
     });
-  }).timeout(10000);
+  });
 
   it("should respond with 200 for download attempt of known font istok-web with one known, one unknown variant", async () => {
+    const app = await initApp();
     const res = await request(app)
       .get("/api/fonts/istok-web?download=zip&formats=woff,woff2&variants=regular,unknownvar")
       .responseType("blob")
@@ -499,46 +508,51 @@ describe("GET /api/fonts/:id?download=zip", () => {
       should(_.endsWith(key, ".woff") || _.endsWith(key, ".woff2")).eql(true);
       should(key.indexOf("regular") === -1).eql(false);
     });
-  }).timeout(10000);
+  });
 
   it("should respond with 404 for download attempt of known font istok-web with empty variants", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/istok-web?download=zip&formats=woff,woff2&variants=")
       .timeout(10000)
       .expect(404)
       .expect("Content-Type", /text\/html/);
-  }).timeout(10000);
+  });
 
   // https://gwfh.mranftl.com/api/fonts/siemreap?download=zip&subsets=latin,latin-ext&formats=eot,woff,woff2,svg,ttf
   it("should respond with 404 for download attempt of unknown font and unknown subset", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/unknown-font?download=zip&subsets=latin&formats=woff,woff2")
       .timeout(10000)
       .expect(404)
       .expect("Content-Type", /text\/html/);
-  }).timeout(10000);
+  });
 
   it("should respond with 404 for download attempt of known font istok-web and unknown subset", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/istok-web?download=zip&subsets=unknown&formats=woff,woff2")
       .timeout(10000)
       .expect(404)
       .expect("Content-Type", /text\/html/);
-  }).timeout(10000);
+  });
 
   it("should respond with 404 for download attempt of known font istok-web and unknown format", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/istok-web?download=zip&formats=rolf")
       .timeout(10000)
       .expect(404)
       .expect("Content-Type", /text\/html/);
-  }).timeout(10000);
+  });
 
   it("should respond with 404 for download attempt of known font istok-web and empty formats", async () => {
+    const app = await initApp();
     await request(app)
       .get("/api/fonts/istok-web?download=zip&formats=")
       .timeout(10000)
       .expect(404)
       .expect("Content-Type", /text\/html/);
-  }).timeout(10000);
+  });
 });

@@ -1,7 +1,7 @@
-import * as fs from "fs/promises";
-import * as _ from "lodash";
-import * as path from "path";
-import * as speakingurl from "speakingurl";
+import fs from "node:fs/promises";
+import _ from "lodash";
+import path from "node:path";
+import speakingurl from "speakingurl";
 import { config } from "../config";
 import { asyncRetry } from "../utils/asyncRetry";
 import axios from "axios";
@@ -55,15 +55,16 @@ export async function fetchGoogleFonts(): Promise<IFontItem[]> {
 
   return asyncRetry(
     async () => {
-
-      const res = await axios.get<IGoogleFontsRes>(`https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=${config.GOOGLE_FONTS_API_KEY}`, {
-        timeout: REQUEST_TIMEOUT_MS,
-        responseType: "json",
-        maxRedirects: 0 // https://github.com/axios/axios/issues/2610
-      });
+      const res = await axios.get<IGoogleFontsRes>(
+        `https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=${config.GOOGLE_FONTS_API_KEY}`,
+        {
+          timeout: REQUEST_TIMEOUT_MS,
+          responseType: "json",
+          maxRedirects: 0, // https://github.com/axios/axios/issues/2610
+        }
+      );
 
       return transform(res.data);
-
     },
     { retries: RETRIES }
   );

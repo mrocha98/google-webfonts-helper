@@ -1,5 +1,5 @@
-import * as css from "css";
-import * as _ from "lodash";
+import css from "css";
+import _ from "lodash";
 import { IUserAgents } from "../config";
 import { asyncRetry } from "../utils/asyncRetry";
 import axios from "axios";
@@ -22,7 +22,6 @@ export async function fetchCSS(family: string, cssSubsetString: string, type: ke
 
   const txt = await asyncRetry(
     async () => {
-
       const res = await axios.get<string>(url, {
         timeout: REQUEST_TIMEOUT_MS,
         responseType: "text",
@@ -30,11 +29,10 @@ export async function fetchCSS(family: string, cssSubsetString: string, type: ke
         headers: {
           Accept: "text/css,*/*;q=0.1",
           "User-Agent": userAgent,
-        }
+        },
       });
 
       return res.data;
-
     },
     { retries: RETRIES }
   );
