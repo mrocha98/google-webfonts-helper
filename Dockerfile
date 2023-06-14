@@ -1,88 +1,34 @@
 ### -----------------------
-# --- Stage: development
-# --- Purpose: Local dev environment (no application deps)
+# References:
+# - <https://snyk.io/blog/10-best-practices-to-containerize-nodejs-web-applications-with-docker/>
+# - <https://medium.com/@alpercitak/nest-js-use-pnpm-on-docker-81998ab4d8a1>
 ### -----------------------
-FROM node:18.16.0-bullseye AS development
+FROM node:18.16.0-bullseye-slim AS base
 
-# Replace shell with bash so we can source files
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
-# Set debconf to run non-interactively
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-
-# Install base dependencies 
-RUN apt-get update && apt-get install -y -q --no-install-recommends \
-    apt-transport-https \
-    build-essential \
-    ca-certificates \
-    curl \
-    git \
-    libssl-dev \
-    lsof \
-    tini \
-    wget \
+RUN apt update && apt install -y --no-install-recommends \
+    dumb-init \
     && rm -rf /var/lib/apt/lists/*
+RUN npm i -g pnpm@~8.6.2
 
-# global npm installs
-RUN npm install -g grunt-cli@1.2.0 \
-    && npm cache clean --force
+FROM base as build-step
 
-WORKDIR /app
+WORKDIR /usr/app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+COPY . .
+RUN pnpm build
+RUN pnpm prune --prod
 
-### -----------------------
-# --- Stage: builder
-# --- Purpose: Installs application deps and builds the service
-### -----------------------
-
-FROM development AS builder
-
-# install server and bundler deps
-COPY package.json /app/package.json
-COPY yarn.lock /app/yarn.lock
-RUN yarn --pure-lockfile
-
-# install clientside deps (bower is a managed application local dev dep)
-COPY bower.json /app/bower.json
-COPY .bowerrc /app/.bowerrc
-RUN  ./node_modules/.bin/bower install
-
-# copy in all workspace files
-COPY . /app/
-
-# build dist
-RUN grunt build
-
-# prepare production node_modules (this cleans up dev deps)
-# https://github.com/vercel/next.js/pull/23056
-# https://github.com/yarnpkg/yarn/issues/6373
-RUN yarn install --production --ignore-scripts --prefer-offline
-
-### -----------------------
-# --- Stage: production
-# --- Purpose: Final step from a new slim image. this should be a minimal image only housing dist (production service)
-### -----------------------
-FROM node:18.16.0-bullseye AS production
-
-# https://github.com/nodejs/docker-node/blob/7de353256a35856c788b37c1826331dbba5f0785/docs/BestPractices.md
-# Node.js was not designed to run as PID 1 which leads to unexpected behaviour when running inside of Docker. 
-# You can also include Tini directly in your Dockerfile, ensuring your process is always started with an init wrapper.
-RUN apt-get update && apt-get install -y -q --no-install-recommends \
-    ca-certificates \
-    lsof \
-    tini \
-    && rm -rf /var/lib/apt/lists/*
+FROM node:18.16.0-bullseye-slim AS production
 
 USER node
-WORKDIR /app
+WORKDIR /usr/app
 
-# copy prebuilt production node_modules
-COPY --chown=node:node --from=builder /app/node_modules /app/node_modules
-
-# copy prebuilt dist
-COPY --chown=node:node --from=builder /app/dist /app/dist
+COPY --from=base /usr/bin/dumb-init /usr/bin/dumb-init
+COPY --chown=node:node --from=build-step /usr/app/node_modules /usr/app/node_modules
+COPY --chown=node:node --from=build-step /usr/app/dist /usr/app/dist
 
 ENV NODE_ENV=production
 
 EXPOSE 8080
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["node","dist/server/app.js"]
+CMD ["dumb-init", "node", "/usr/app/dist/app.js"]

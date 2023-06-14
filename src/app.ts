@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-require("source-map-support").install();
-
+import "./load-env";
 import * as express from "express";
 import * as http from "http";
 import * as JSZip from "jszip";
-import * as path from "path";
 import { config } from "./config";
 import { initStore } from "./logic/store";
 import { setupRoutes } from "./routes";
@@ -32,16 +30,10 @@ const init = (async () => {
   }
 
   if (env === "production") {
-    app.use(express.static(path.join(config.ROOT, "public")));
-    app.set("appPath", config.ROOT + "/public");
     if (config.ENABLE_MIDDLEWARE_ACCESS_LOG) {
       app.use(require("morgan")(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length]'));
     }
   } else {
-    app.use(require("connect-livereload")());
-    app.use(express.static(path.join(config.ROOT, ".tmp")));
-    app.use(express.static(path.join(config.ROOT, "client")));
-    app.set("appPath", config.ROOT + "/client");
     app.use(require("morgan")("dev"));
     app.use(require("errorhandler")()); // Error handler - has to be last
   }
